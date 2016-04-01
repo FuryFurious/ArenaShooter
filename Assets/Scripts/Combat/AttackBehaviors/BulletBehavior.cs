@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 
 [RequireComponent(typeof(Rigidbody), typeof(Collider))]
-public class BulletBehavior : ASkill 
+public class BulletBehavior : AWeaponUse 
 {
     public enum RemovePolicy { None, Distance, Lifetime }
     public RemovePolicy DeletePolicy;
@@ -31,7 +31,7 @@ public class BulletBehavior : ASkill
             Destroy(gameObject);
     }
 
-    public override void Init(SkillActivator spawner, Vector3 spawnPos, Vector3 lookDirection)
+    public override void Init(AWeapon spawner, Vector3 spawnPos, Vector3 lookDirection)
     {
         if (myRigidBody == null)
             myRigidBody = GetComponent<Rigidbody>();
