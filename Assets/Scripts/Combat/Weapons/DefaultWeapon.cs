@@ -5,17 +5,19 @@ using System;
 public class DefaultWeapon : AWeapon
 {
     public Transform BulletSpawnTransform;
-    public float SecondaryOffsetDegree = 45.0f;
-    public int NumSecondaryShoots = 5;
+ 
 
     public float PrimaryBulletSpeed;
     public float PrimaryCooldown;
     public int PrimaryDamage;
+    public float PrimaryOffsetDegree = 15f;
 
+    public int NumSecondaryShoots = 5;
     public float SecondaryCooldown;
     public float SecondaryMinSpeed;
     public float SecondaryMaxSpeed;
     public int SecondaryDamage;
+    public float SecondaryOffsetDegree = 45.0f;
 
     [SerializeField]
     private BulletBehavior Prefab;
@@ -66,11 +68,22 @@ public class DefaultWeapon : AWeapon
     {
         if (mode == FireMode.Primary && IsReady)
         {
-            GameObject spawnedObj = GameObject.Instantiate(Prefab.gameObject);
-            BulletBehavior spawnedBullet = spawnedObj.GetComponent<BulletBehavior>();
-            spawnedBullet.Speed = PrimaryBulletSpeed;
-            spawnedBullet.Init(this, BulletSpawnTransform.position, BulletSpawnTransform.forward);
-            spawnedBullet.Damage = PrimaryDamage;
+            
+            for (int i = 0; i < 2; i++)
+            {
+                GameObject spawnedObj = GameObject.Instantiate(Prefab.gameObject);
+                BulletBehavior spawnedBullet = spawnedObj.GetComponent<BulletBehavior>();
+                spawnedBullet.Speed = PrimaryBulletSpeed;
+
+                Vector3 direction = BulletSpawnTransform.forward;
+                direction = Quaternion.Euler(0.0f, PrimaryOffsetDegree * (UnityEngine.Random.value - 0.5f), 0.0f) * direction;
+
+                spawnedBullet.Init(this, BulletSpawnTransform.position, direction);
+                spawnedBullet.Damage = PrimaryDamage;
+                curCooldown = PrimaryCooldown;
+            }
+            
+
             curCooldown = PrimaryCooldown;
         }
     }

@@ -1,11 +1,10 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class SpawnPoint : MonoBehaviour
 {
-
-    private PlayerInfo spawnPlayer;
-    private float cooldown;
+    private List<SpawnInfo> spawnPlayers = new List<SpawnInfo>();
 
     void Start()
     {
@@ -14,27 +13,60 @@ public class SpawnPoint : MonoBehaviour
 
     void Update()
     {
-        if (spawnPlayer != null)
+        if (spawnPlayers.Count > 0)
         {
-            cooldown -= Time.deltaTime;
-
-            if(cooldown < 0.0f)
+            for (int i = 0; i < spawnPlayers.Count; i++)
             {
-                spawnPlayer.Controller.gameObject.transform.position = gameObject.transform.position;
-                spawnPlayer.Controller.gameObject.SetActive(true);
-                spawnPlayer.HealthManager.ResetHealth();
-                spawnPlayer = null;
+                spawnPlayers[i].time -= Time.deltaTime;
 
+                if (spawnPlayers[i].time <= 0.0f)
+                {
+                    SpawnPlayer(i);
+                }
+
+             
             }
+
         }
 
+    }
+
+    private void SpawnPlayer(int i)
+    {
+        spawnPlayers[i].info.Controller.ResetForce();
+        spawnPlayers[i].info.Controller.gameObject.transform.position = gameObject.transform.position;
+        spawnPlayers[i].info.Controller.gameObject.SetActive(true);
+        spawnPlayers[i].info.HealthManager.SetCurHealth(spawnPlayers[i].info.HealthManager.MaxHealth, true);
+        spawnPlayers[i].info.HealthManager.StartInvi(WorldManager.Instance.PlayerInviTime);
+
+        spawnPlayers.RemoveAt(i);
+    }
+
+    public void ClearSpawnPoint()
+    {
+        for (int i = 0; i < spawnPlayers.Count; i++)
+        {
+            SpawnPlayer(i);
+        }
     }
 
     public void SpawnPlayerIn(PlayerInfo info, float time)
     {
         Debug.Assert(!info.Controller.gameObject.activeSelf);
-        spawnPlayer = info;
-        cooldown = time;
+
+        spawnPlayers.Add(new SpawnInfo(info, time));
+
     }
 
+    private class SpawnInfo
+    {
+        public PlayerInfo info;
+        public float time;
+
+        public SpawnInfo(PlayerInfo info, float time)
+        {
+            this.info = info;
+            this.time = time;
+        }
+    }
 }

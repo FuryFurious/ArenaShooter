@@ -4,7 +4,12 @@ using System.Collections;
 public class HealthPickUp : MonoBehaviour
 {
     public HealthReactivator Reactivator;
-    public int HealthAmount = 1;
+    private int HealthAmount = 1;
+
+    void Start()
+    {
+        HealthAmount = WorldManager.Instance.MedPackHealthAmount;
+    }
 
     void OnTriggerEnter(Collider other)
     {
@@ -12,7 +17,7 @@ public class HealthPickUp : MonoBehaviour
     
         if(controller != null)
         {
-            controller.Info.HealthManager.ChangeHealth(HealthAmount);
+            controller.PlayerInfo.HealthManager.ChangeHealth(HealthAmount, null);
             gameObject.SetActive(false);
             Reactivator.StartRespawn();
         }

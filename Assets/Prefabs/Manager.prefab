@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &147348
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 436740}
+  - 114: {fileID: 11448224}
+  - 114: {fileID: 11480078}
+  m_Layer: 0
+  m_Name: Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 4294967295
+  m_IsActive: 1
+--- !u!4 &436740
+Transform:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 147348}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+--- !u!114 &11448224
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 147348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 496ef6bc512beba4aaa86b8ee17135fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  TimeToStart: 5
+  MedPackHealthAmount: 25
+  MedPackRespawnTime: 30
+  PlayerInviTime: 2
+  PlayerRespawnTime: 5
+  PlayerHealth: 100
+  CameraOffset: {x: 0, y: 18, z: -8}
+  InputMoveHorizontalName: MoveX_
+  InputMoveVerticalName: MoveY_
+  InputFire0Name: Fire0_
+  InputFire1Name: Fire1_
+  InputLookHorizontalName: LookX_
+  InputLookVerticalName: LookY_
+  InputJumpName: Jump_
+  InputStartName: Start_
+--- !u!114 &11480078
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 147348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba4a9f425dfe7b94db441449fd5593b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  PlayerPrefab: {fileID: 140372, guid: f290ee14637d91b4594ecf59139a6cd8, type: 2}
+  DefaultWeaponPrefab: {fileID: 11468234, guid: ad42214050f5b0845980fca6979fbee4,
+    type: 2}
+  GlobalPlayerCamPrefab: {fileID: 11469012, guid: 0b700f745bdbfc64f83973593f16ff00,
+    type: 2}
+  PlayerDeathParticlesPrefab: {fileID: 11431582, guid: 49866b2b401b5624683b91f0e07ac060,
+    type: 2}
+  PlayerMaterial: {fileID: 2100000, guid: e36b8bf12ae09754dad2025f5a7e070f, type: 2}
+  playerColors:
+  - {r: 0, g: 0.503, b: 1, a: 1}
+  - {r: 1, g: 0.25735295, b: 0.25735295, a: 1}
+  - {r: 0.32352942, g: 1, b: 0.32352942, a: 1}
+  - {r: 0.8206897, g: 0.828, b: 0, a: 1}
+--- !u!1001 &100100000
+Prefab:
+  m_ObjectHideFlags: 1
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications: []
+    m_RemovedComponents: []
+  m_ParentPrefab: {fileID: 0}
+  m_RootGameObject: {fileID: 147348}
+  m_IsPrefabParent: 1

@@ -16,13 +16,16 @@ public class PlayerController : MonoBehaviour
     public float MoveSpeed = 2.0f;
     public float JumpHeight = 5.0f;
     public float RotationSpeed = 2.0f;
+    public float InviFlickerTime = 0.25f;
 
     public Light PlayerLight;
     public WeaponRoot WeaponRoot;
     public MeshRenderer TheRenderer;
     public List<AWeapon> weapons = new List<AWeapon>();
 
-    public PlayerInfo Info { get; private set; }
+    public PlayerInfo PlayerInfo { get; private set; }
+
+    private Vector3 lastForce;
 
     [HideInInspector]
     public string InputMoveHorizontalName;
@@ -43,12 +46,35 @@ public class PlayerController : MonoBehaviour
     private HealthManager healthManager;
     private ThirdPersonController charController;
 
-	void Start () 
+    private float flickerCooldown;
+
+	public void CreatePlayer (int index) 
     {
         charController = GetComponent<ThirdPersonController>();
 
-        this.Info = new PlayerInfo(gameObject.name, this, healthManager);
-        WorldManager.Instance.RegisterPlayer(this.Info);
+        this.PlayerInfo = new PlayerInfo("Player " + (index + 1), this, healthManager);
+        WorldManager.Instance.RegisterPlayer(this.PlayerInfo, index);
+
+        healthManager.OnInviEnter.AddListener(this.OnInviEnter);
+        healthManager.OnInviUpdate.AddListener(this.OnInviUpdate);
+        healthManager.OnInviEnd.AddListener(this.OnInviEnd);
+    }
+
+
+    public void AddForce(Vector3 force, bool startParticles)
+    {
+        AddForce(force.x, force.y, force.z, startParticles);
+    }
+
+    private void AddForce(float x, float y, float z, bool startParticles)
+    {
+        if (!healthManager.IsInvincible)
+        {
+            charController.AddForce(x, y, z);
+
+            lastForce = new Vector3(x, y, z);
+        }
+      
     }
 
     void Update()
@@ -84,7 +110,7 @@ public class PlayerController : MonoBehaviour
         // movement.Normalize()
         movement.x *= MoveSpeed;
         movement.z *= MoveSpeed;
-        charController.SetForce(movement.x, movement.z);
+        charController.SetMovement(movement.x, movement.z);
     }
 
     void HandleWeapon(AWeapon weapon, string buttonName, AWeapon.FireMode mode)
@@ -102,26 +128,63 @@ public class PlayerController : MonoBehaviour
     public void AddWeaponFromPrefab(AWeapon weaponPrefab)
     {
         GameObject newWeapon = Instantiate(weaponPrefab.gameObject);
-
         newWeapon.gameObject.layer = BulletLayer;
 
         newWeapon.transform.parent = WeaponRoot.transform;
         newWeapon.transform.position = WeaponRoot.transform.position;
         newWeapon.transform.forward = WeaponRoot.transform.forward;
-       
-        weapons.Add(newWeapon.GetComponent<AWeapon>());
+        AWeapon weapon = newWeapon.GetComponent<AWeapon>();
+        weapon.OwningPlayer = this.PlayerInfo;
+        weapons.Add(weapon);
     }
 
-    public void Die()
+    public void Die(PlayerInfo killer)
     {
-        WorldManager.Instance.OnPlayerDied(Info);
-    }
-
-    public void OnHit(HealthManager health, int delta)
-    {
-        if(delta < 0)
+        //to prevent "multi kill"
+        if (this.gameObject.activeSelf)
         {
-            Info.PlayerCam.SetZoom(0.75f);
+            healthManager.SetCurHealth(0, true);
+            WorldManager.Instance.OnPlayerDied(PlayerInfo, killer);
+
+            PlayerDeathParticles partices = Instantiate(PrefabManager.Instance.PlayerDeathParticlesPrefab).GetComponent<PlayerDeathParticles>();
+            partices.gameObject.transform.position = gameObject.transform.position;
+
+            if(killer != null)
+                partices.Init(PlayerInfo.Color, lastForce * 0.5f);
+
+            else
+                partices.Init(PlayerInfo.Color, Vector3.zero);
+
         }
+    }
+
+    public void ResetForce()
+    {
+        charController.SetForce(0.0f, 0.0f, 0.0f);
+        charController.SetMovement(0.0f, 0.0f, 0.0f);
+    }
+
+    public void OnInviUpdate()
+    {
+        flickerCooldown -= Time.deltaTime;
+
+        if(flickerCooldown < 0.0f)
+        {
+            TheRenderer.enabled = !TheRenderer.enabled;
+            flickerCooldown = InviFlickerTime;
+        }
+         
+    }
+
+    public void OnInviEnter()
+    {
+        flickerCooldown = InviFlickerTime;
+        TheRenderer.enabled = true;
+    }
+
+    public void OnInviEnd()
+    {
+        TheRenderer.enabled = true;
+        flickerCooldown = 0.0f;
     }
 }

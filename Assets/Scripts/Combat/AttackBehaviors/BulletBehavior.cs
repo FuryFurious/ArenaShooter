@@ -4,65 +4,118 @@ using System.Collections;
 [RequireComponent(typeof(Rigidbody), typeof(Collider))]
 public class BulletBehavior : AWeaponUse 
 {
-    public enum RemovePolicy { None, Distance, Lifetime }
-    public RemovePolicy DeletePolicy;
-
-    public float PolicyValue = 1.0f;
+    public float DecalLifeTime = 1.0f;
+    public float LifeTime = 1.0f;
     public float Speed = 5.0f;
 
     public bool RotateToDirection;
     public bool RemoveOnCollision;
+    public bool GravityOnCollision;
     public int Damage;
 
-    private float curPolicyValue;
+    public MeshRenderer BulletRenderer;
+
+    private float lifeTime;
+    private float decalLifeTime;
 
     private Vector3 direction;
-    private Rigidbody myRigidBody;
+    public Rigidbody MyRigidBody;
+
+    private bool collided = false;
+
+    private AWeapon spawner;
 
     void Update() 
     {
-        if (DeletePolicy == RemovePolicy.Distance)
-            curPolicyValue -= Time.deltaTime * Speed;
+        if (!collided)
+        {
+            lifeTime -= Time.deltaTime;
+            if (lifeTime <= 0.0f)
+            {
+                Destroy(gameObject);
+            }
+        }
 
-        else if (DeletePolicy == RemovePolicy.Lifetime)
-            curPolicyValue -= Time.deltaTime;
+        else
+        {
+            if (MyRigidBody.velocity == Vector3.zero)
+            {
+                gameObject.layer = LayerMask.NameToLayer("None");
+                MyRigidBody.isKinematic = true;
+                gameObject.isStatic = true;
+            }
+            
 
-        if (curPolicyValue <= 0.0f)
-            Destroy(gameObject);
+            decalLifeTime -= Time.deltaTime;
+            float t = decalLifeTime / DecalLifeTime;
+
+            if (t >= 0.0f)
+            {
+               // Color color = BulletRenderer.material.color;
+               // color.a = t;
+               // BulletRenderer.material.color = color;
+            }
+
+            else
+                Destroy(gameObject);
+        }
+          
     }
 
     public override void Init(AWeapon spawner, Vector3 spawnPos, Vector3 lookDirection)
     {
-        if (myRigidBody == null)
-            myRigidBody = GetComponent<Rigidbody>();
+        BulletRenderer.material.color = spawner.OwningPlayer.Color * new Color(0.75f, 0.75f, 0.75f, 1.0f);
+
+        this.spawner = spawner;
 
         if(RotateToDirection)
             gameObject.transform.forward = lookDirection;
 
         gameObject.layer = spawner.gameObject.layer;
 
+        this.direction = lookDirection;
+
         gameObject.transform.position = spawnPos;
-        myRigidBody.velocity = lookDirection * Speed;
+        MyRigidBody.velocity = Vector3.zero;
+        MyRigidBody.AddForce(lookDirection * Speed, ForceMode.VelocityChange);
 
-        if (DeletePolicy == RemovePolicy.None)
-            curPolicyValue = 1.0f;
-
-        else
-            curPolicyValue = PolicyValue;
+        lifeTime = LifeTime;
     }
 
 
-    void OnTriggerEnter(Collider other)
+    void OnCollisionEnter(Collision other)
     {
-        HealthManager healthManager = other.GetComponent<HealthManager>();
-
-        if (healthManager)
+        if (!collided)
         {
-            healthManager.ChangeHealth(-Damage);
-        }
+            if (GravityOnCollision)
+                MyRigidBody.useGravity = true;
+     
+            HealthManager healthManager = other.collider.GetComponent<HealthManager>();
 
-        if (RemoveOnCollision)
-            Destroy(gameObject);
+            if (healthManager)
+            {
+                healthManager.ChangeHealth(-Damage, spawner.OwningPlayer);
+            }
+
+            PlayerControllerRef controllerRef = other.collider.GetComponent<PlayerControllerRef>();
+
+            if (controllerRef)
+            {         
+                controllerRef.Controller.AddForce(direction * Speed * 0.33f, healthManager && healthManager.Health == 0);
+      
+            }
+
+            if (RemoveOnCollision)
+                Destroy(gameObject);
+
+
+            decalLifeTime = DecalLifeTime;
+            collided = true;
+
+            gameObject.layer = LayerMask.NameToLayer("Decal");
+        }
+            
+             
     }
 
 }

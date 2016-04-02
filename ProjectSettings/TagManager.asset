@@ -20,13 +20,13 @@ TagManager:
   - PlayerEnvCollider
   - PickUp
   - Environment
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Decal
+  - None
+  - P3
+  - P3Bullet
+  - P4
+  - P4Bullet
+  - AnyBullet
   - 
   - 
   - 

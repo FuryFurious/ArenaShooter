@@ -46,7 +46,7 @@ GameObject:
   - 33: {fileID: 3310804}
   - 136: {fileID: 13645890}
   - 23: {fileID: 2392966}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -63,7 +63,8 @@ GameObject:
   - 4: {fileID: 414796}
   - 114: {fileID: 11405086}
   - 136: {fileID: 13679748}
-  m_Layer: 8
+  - 114: {fileID: 11452742}
+  m_Layer: 10
   m_Name: Health
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -113,7 +114,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 140372}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0.66, y: -3.83, z: -1.24}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 443718}
@@ -164,7 +165,7 @@ Light:
   serializedVersion: 6
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 1
+  m_Intensity: 2
   m_Range: 10
   m_SpotAngle: 30
   m_CookieSize: 10
@@ -181,7 +182,7 @@ Light:
   m_RenderMode: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 4294963455
+    m_Bits: 4292931784
   m_Lightmapping: 4
   m_BounceIntensity: 0
   m_ShadowRadius: 0
@@ -198,27 +199,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97ab9bf68cf759e4cb411e7b5bb733a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startHealth: 10
+  Health: 0
+  MaxHealth: 100
   OnZeroHealth:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 11489522}
         m_MethodName: Die
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_TypeName: VoidEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-  OnHealthChanged:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 11489522}
-        m_MethodName: OnHit
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -228,8 +215,37 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+    m_TypeName: KillEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  OnHealthChanged:
+    m_PersistentCalls:
+      m_Calls: []
     m_TypeName: HealthChangedEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
+  OnInviEnter:
+    m_PersistentCalls:
+      m_Calls: []
+    m_TypeName: VoidEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  OnInviUpdate:
+    m_PersistentCalls:
+      m_Calls: []
+    m_TypeName: VoidEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  OnInviEnd:
+    m_PersistentCalls:
+      m_Calls: []
+    m_TypeName: VoidEvent, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  IsInvincible: 0
+--- !u!114 &11452742
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 178724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55adc9d44ccbbff4390ad53be1619ad8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Controller: {fileID: 11489522}
 --- !u!114 &11474822
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -255,9 +271,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   PlayerLayer: 0
   BulletLayer: 0
-  MoveSpeed: 5
+  MoveSpeed: 8
   JumpHeight: 10
-  RotationSpeed: 10
+  RotationSpeed: 20
+  InviFlickerTime: 0.0125
   PlayerLight: {fileID: 10858894}
   WeaponRoot: {fileID: 11474822}
   TheRenderer: {fileID: 2392966}
@@ -281,7 +298,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 77adbbeb431b064408d099e13eacfa60, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ForcePercentZero: 0.15
   GravityScale: 2
+  Damping: 10
   UseGravity: 1
   MaxJumpCount: 1
 --- !u!136 &13645890

@@ -4,15 +4,28 @@ using System.Collections.Generic;
 using UnityEngine.UI;
 using System;
 
-public class WorldManager : MonoBehaviour {
-
-
+public class WorldManager : MonoBehaviour
+{
     public static WorldManager Instance { get; private set; }
+
+    private GlobalCamera globalCam;
+
+    public int TimeToStart = 5;
+    public int MedPackHealthAmount;
+    public float MedPackRespawnTime;
+    private bool useRoundTimer = false;
+
+    public float PlayerInviTime = 1.0f;
+
+    public void RegisterCharacterImpulse(CharacterImpulse characterImpulse)
+    {
+        impulses.Add(characterImpulse);
+        impulses.Sort((x, y) => x.PlayerIndex.CompareTo(y.PlayerIndex));
+    }
 
     public float PlayerRespawnTime = 5.0f;
     public int PlayerHealth = 10;
     public Vector3 CameraOffset = new Vector3(0.0f, 15.0f, -5.0f);
-    public float CameraForwardOffset = 2.0f;
 
     public string InputMoveHorizontalName = "MoveX_";
     public string InputMoveVerticalName = "MoveY_";
@@ -21,41 +34,71 @@ public class WorldManager : MonoBehaviour {
     public string InputLookHorizontalName = "LookX_";
     public string InputLookVerticalName = "LookY_";
     public string InputJumpName = "Jump_";
+    public string InputStartName = "Start_";
 
-    private List<PlayerInfo> currentPlayers;
+    private PlayerInfo[] currentPlayers;
     private List<SpawnPoint> spawnPoints;
-    
+    private List<PlayerStartPoint> startPoint;
+    private List<HealthReactivator> healthPacks;
+    private List<CharacterImpulse> impulses;
+
+
+    private float timeWhenReset;
 
     void Awake()
     {
         Debug.Assert(Instance == null);
 
         Instance = this;
-        currentPlayers = new List<PlayerInfo>();
+
+        currentPlayers = new PlayerInfo[4];
         spawnPoints = new List<SpawnPoint>();
+        startPoint = new List<PlayerStartPoint>();
+        healthPacks = new List<HealthReactivator>();
+        impulses = new List<CharacterImpulse>();
+
+        InitGlobalCamera();
     }
 
-    public List<PlayerInfo> GetPlayerInfos()
+    public PlayerInfo[] GetPlayerInfos()
     {
         return currentPlayers;
     }
 
     public PlayerInfo GetPlayerInfo(int id)
     {
-        return currentPlayers[id];
+        if (id < 0 && id >= 4)
+            return null;
+
+        else
+            return currentPlayers[id];
     }
 
     public int GetNumPlayers()
     {
-        return currentPlayers.Count;
+        return currentPlayers.Length;
     }
 
-    public void RegisterPlayer(PlayerInfo player)
+    public void RegisterHealthPack(HealthReactivator healthReactivator)
     {
-        Debug.Assert(!currentPlayers.Contains(player));
+        healthPacks.Add(healthReactivator);
+    }
 
-        player.Index = currentPlayers.Count;
-        currentPlayers.Add(player);
+    public void ResetCharImpulses()
+    {
+        for (int i = 0; i < impulses.Count; i++)
+        {
+            impulses[i].Reset();
+
+        }
+    }
+
+    public void RegisterPlayer(PlayerInfo player, int index)
+    {
+        Debug.Assert(startPoint.Count >= 4);
+
+        player.Index = index;
+        currentPlayers[index] = player;
         SetInputForPlayer(player);
 
         player.Controller.PlayerLayer = WorldManager.Instance.GetPlayerLayer(player.Index);
@@ -66,59 +109,121 @@ public class WorldManager : MonoBehaviour {
 
         player.Controller.AddWeaponFromPrefab(PrefabManager.Instance.DefaultWeaponPrefab);
 
-        player.Controller.TheRenderer.material = PrefabManager.Instance.GetMaterial(player.Index);
-        player.Controller.PlayerLight.color = player.Controller.TheRenderer.material.color;
+        player.Controller.TheRenderer.material = PrefabManager.Instance.PlayerMaterial;
+        player.Color = PrefabManager.Instance.GetPlayerColor(player.Index); ;
+        player.Controller.TheRenderer.material.color = player.Color;
 
-        player.HealthManager.SetHealth(PlayerHealth);
+        player.Controller.PlayerLight.color = player.Color;
 
-        InitCamera(player);
-    }
+        player.HealthManager.SetMinMaxHealth(PlayerHealth);
 
-    private void InitCamera(PlayerInfo player)
-    {
-        GameObject playercam = Instantiate(PrefabManager.Instance.PlayerCam.gameObject);
-        FollowPlayer follower = playercam.GetComponent<FollowPlayer>();
-        follower.Init(player.Controller, CameraOffset);
-        player.SetCamera(follower);
+        player.HealthManager.OnHealthChanged.AddListener(HealthChanged);
 
-        CameraAdded();
-    }
+        HUDManager.Instance.RegisterPlayer(player);
 
-    private void CameraAdded()
-    {
-        int numCams = currentPlayers.Count;
+        player.Controller.gameObject.transform.position = startPoint[player.Index].transform.position;
 
-        for (int i = 0; i < currentPlayers.Count; i++)
+
+        
+        for (int i = 0; i < impulses.Count; i++)
         {
-            currentPlayers[i].Cam.rect = GetViewPortRect(i, numCams);
+            impulses[i].Init();
+        }
+       
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+            ResetGame();
+
+        if (useRoundTimer)
+        {
+            float delta = TimeToStart - (Time.realtimeSinceStartup - timeWhenReset) + 0.5f;
+
+            HUDManager.Instance.SetTimerTime((int)delta);
+
+            if((int)delta <= 0)
+            {
+                Time.timeScale = 1.0f;
+                useRoundTimer = false;
+                HUDManager.Instance.DisableTimer();
+            }
         }
     }
 
-
-    //TODO: somehow better:
-    private Rect GetViewPortRect(int id, int maxCams)
+    private void ResetMedPacks()
     {
-        Debug.Assert(maxCams > 0);
-
-        if(maxCams == 1)
+        for (int i = 0; i < healthPacks.Count; i++)
         {
-            return new Rect(0.0f, 0.0f, 1.0f, 1.0f);
+            healthPacks[i].Reset();
         }
-
-        else
-        {
-            Debug.Assert(maxCams == 2);
-
-            if (id == 0)
-                return new Rect(0.0f, 0.0f, 0.5f, 1.0f);
-
-            else
-                return new Rect(0.5f, 0.0f, 0.5f, 1.0f);
-        }
-
     }
 
+    private void ResetPositions()
+    {
+        for (int i = 0; i < currentPlayers.Length; i++)
+        {
+            if(currentPlayers[i] != null)
+                currentPlayers[i].Controller.gameObject.transform.position = startPoint[currentPlayers[i].Index].transform.position;
+        }
+            
+        
+    }
+
+    public void ResetGame()
+    {
+        for (int i = 0; i < impulses.Count; i++)
+        {
+            impulses[i].Init();
+        }
+
+        ResetCharImpulses();
+
+        ResetMedPacks();
+
+        ClearSpawnPoints();
+
+        for (int i = 0; i < currentPlayers.Length; i++)
+        {
+            if(currentPlayers[i] != null)
+                currentPlayers[i].Reset();
+        }
  
+        ResetPositions();
+
+        if (globalCam)
+            globalCam.Reset();
+
+        useRoundTimer = true;
+        timeWhenReset = Time.realtimeSinceStartup;
+        Time.timeScale = 0.0f;
+    }
+
+    private void ClearSpawnPoints()
+    {
+        for (int i = 0; i < spawnPoints.Count; i++)
+        {
+            spawnPoints[i].ClearSpawnPoint();
+        }
+    }
+
+    private void InitGlobalCamera()
+    {
+        globalCam = Instantiate(PrefabManager.Instance.GlobalPlayerCamPrefab.gameObject).GetComponent<GlobalCamera>();
+    }
+
+    private void HealthChanged(HealthManager manager, int delta)
+    {
+        for (int i = 0; i < currentPlayers.Length; i++)
+        {
+            if(currentPlayers[i] != null && currentPlayers[i].HealthManager == manager)
+            {
+                currentPlayers[i].HUD.LifeBar.value = manager.GetPercent();
+                break;
+            }
+        }
+    }
 
     public void RegistersSpawnPoint(SpawnPoint point)
     {
@@ -150,13 +255,31 @@ public class WorldManager : MonoBehaviour {
     
 
 
-    public void OnPlayerDied(PlayerInfo player)
+    public void OnPlayerDied(PlayerInfo player, PlayerInfo killer)
     {
+        player.Deaths++;
+
+        //player died, but it was by the surroundings:
+        if(killer == null)
+            player.Score = Mathf.Max(player.Score - 1, 0);
+
         player.Controller.gameObject.SetActive(false);
 
         SpawnPoint point = spawnPoints[UnityEngine.Random.Range(0, spawnPoints.Count)];
 
         point.SpawnPlayerIn(player, PlayerRespawnTime);
+
+        if(killer != null)
+        {
+            killer.Kills++;
+            killer.Score++;
+        }
     }
 
+    public void RegisterPlayerStartPoint(PlayerStartPoint playerStartPoint)
+    {
+        this.startPoint.Add(playerStartPoint);
+
+        startPoint.Sort((x, y) => x.PlayerIndex.CompareTo(y.PlayerIndex));
+    }
 }

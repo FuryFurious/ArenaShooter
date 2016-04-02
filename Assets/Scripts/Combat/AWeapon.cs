@@ -3,6 +3,8 @@ using System.Collections;
 
 public abstract class AWeapon : MonoBehaviour 
 {
+    public PlayerInfo OwningPlayer;
+
     public enum FireMode { Primary, Secondary }
 
 
